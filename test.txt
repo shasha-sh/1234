@@ -1,1 +1,132 @@
-hello
+#include "number.h"
+
+#include <string>
+#include <algorithm>
+#include <vector>
+
+
+uint2022_t from_uint(uint32_t val) {
+    uint2022_t res;
+    while (val > 0) {
+        res.num.push_back(val % kMod);
+        val /= kMod;
+    }
+    if (res.num.size() == 0) res.num.push_back(0);
+
+    return res;
+}
+
+uint2022_t from_string(const char* buff) {
+    std::string num_ = buff;
+    uint2022_t res;
+    int pow10 = 0;
+    for (int i = num_.size() - 1; i >= 0; i--) {
+        if (pow10 % kMod == 0) {
+            pow10 = 1;
+            res.num.push_back(0);
+        }
+        res.num.back() += (num_[i] - '0') * pow10;
+        pow10 *= 10;
+    }
+
+    return res;
+}
+
+uint2022_t operator+(const uint2022_t& lhs, const uint2022_t& rhs) {
+    uint2022_t res;
+    int carry = 0;
+    for (int i = 0; i < std::max(lhs.num.size(), rhs.num.size()) || carry != 0; ++i) {
+        int lhs_dig = (i < lhs.num.size()) ? lhs.num[i] : 0;
+        int rhs_dig = (i < rhs.num.size()) ? rhs.num[i] : 0;
+        res.num.push_back((lhs_dig + rhs_dig + carry) % kMod);
+        carry = (lhs_dig + rhs_dig + carry) / kMod;
+    }
+
+    return res;
+}
+
+uint2022_t operator-(const uint2022_t& lhs, const uint2022_t& rhs) {
+    uint2022_t res;
+    res.num.resize(lhs.num.size());
+    copy(lhs.num.begin(), lhs.num.end(), res.num.begin());
+    int carry = 0;
+    for (int i = 0; i < rhs.num.size() || carry != 0; ++i) {
+        res.num[i] -= carry + ((i < rhs.num.size()) ? rhs.num[i] : 0);
+        carry = (res.num[i] < 0) ? 1 : 0;
+        if (carry == 1) res.num[i] += kMod;
+    }
+    while (res.num.size() > 1 && res.num.back() == 0) res.num.pop_back();
+
+    return res;
+}
+
+uint2022_t operator*(const uint2022_t& lhs, const uint2022_t& rhs) {
+    uint2022_t res;
+    res.num.resize(lhs.num.size() + rhs.num.size(), 0);
+    long long carry;
+    for (int i = 0; i < lhs.num.size(); ++i) {
+        carry = 0;
+        for (int j = 0; j < rhs.num.size() || carry != 0; ++j) {
+            long long dig = static_cast<long long>(res.num[i + j]) + static_cast<long long>(lhs.num[i]) * static_cast<long long>(rhs.num[j]) + carry;
+            res.num[i + j] = static_cast<int>(dig % kMod);
+            carry = dig / kMod;
+        }
+    }
+    while (res.num.size() > 1 && res.num.back() == 0) res.num.pop_back();
+
+    return res;
+}
+
+uint2022_t operator/(const uint2022_t& lhs, const uint2022_t& rhs) {
+    return uint2022_t();
+}
+
+bool operator==(const uint2022_t& lhs, const uint2022_t& rhs) {
+    bool res = true;
+    if (lhs.num.size() != rhs.num.size()) {
+        res = false;
+    } else {
+        for (int i = 0; i < lhs.num.size(); ++i) {
+            if (lhs.num[i] != rhs.num[i]) {
+                res = false;
+                break;
+            }
+        }
+    }
+
+    return res;
+}
+
+bool operator!=(const uint2022_t& lhs, const uint2022_t& rhs) {
+    bool res = false;
+    if (lhs.num.size() != rhs.num.size()) {
+        res = true;
+    } else {
+        for (int i = 0; i < lhs.num.size(); ++i) {
+            if (lhs.num[i] != rhs.num[i]) {
+                res = true;
+                break;
+            }
+        }
+    }
+
+    return res;
+}
+
+std::ostream& operator<<(std::ostream& stream, const uint2022_t& value) {
+    for (int i = value.num.size() - 1; i >= 0; --i) {
+        std::string dig = "";
+        int x = value.num[i];
+        while (x > 0) {
+            dig += static_cast<char>(x % 10) + '0';
+            x /= 10;
+        }
+        while (dig.size() != 9 && i != value.num.size() - 1) {
+            dig += '0';
+        }
+        reverse(dig.begin(), dig.end());
+        stream << dig;
+    }
+
+    return stream;
+}
